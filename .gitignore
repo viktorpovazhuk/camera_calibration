@@ -1,0 +1,4 @@
+cmake-build-debug/
+.PVS-Studio/
+.idea/
+data/
