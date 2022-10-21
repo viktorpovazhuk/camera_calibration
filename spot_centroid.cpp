@@ -5,6 +5,7 @@
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <cmath>
+#include <string>
 
 using namespace cv;
 using namespace std;
@@ -12,7 +13,7 @@ using namespace std;
 int main() {
     Mat image;
 
-    VideoCapture cap(2);
+    VideoCapture cap(0);
 
     if (!cap.isOpened()) {
         std::cout << "cannot open camera";
@@ -22,6 +23,18 @@ int main() {
         std::cout << "cannot read from camera";
         return 0;
     }
+//
+//    imshow("Image", image);
+//
+    imwrite("../data/test_aim.jpg", image);
+
+//    image = imread("../data/test1.jpg", 1);
+//
+//    if (!image.data)
+//    {
+//        printf("No image data \n");
+//        return -1;
+//    }
 
     Mat image_hsv;
     cvtColor(image, image_hsv, COLOR_BGR2HSV);
@@ -40,40 +53,28 @@ int main() {
     threshold(val_mat, val_thr, dv_thr, 255, THRESH_BINARY);
     int greater_thr = countNonZero(val_thr);
 
-    std::cout << greater_thr << '\n';
+    std::cout << "num of greater than 0.95 thr: " <<  greater_thr << '\n';
 
 //    10 < num < 36
 
-    // find moments of the image
     Moments m = moments(val_thr,true);
     Point centr(m.m10 / m.m00, m.m01 / m.m00);
 
-// coordinates of centroid
-    cout << Mat(centr) << endl;
+    cout << "coordinates of centroid: " << Mat(centr) << endl;
 
-// show the image with a point mark at the centroid
     circle(image, centr, 30, Scalar(128, 0, 0), 1);
 
 
     int blob_area = greater_thr;
-    int diam = ceil(pow(blob_area, 0.5)) * 10;
-    cout << diam;
+    int diam = ceil(pow(blob_area, 0.5));
+    cout << "+- diameter of spot: " << diam << endl;
 
-    diam = 100;
     // didn't work. Don't know why
 //    Mat crop_mat = val_mat(Range(centr.x-diam,centr.x+diam),Range(centr.y-diam,centr.y+diam));
     Mat crop_mat(image, Rect(Point(centr.x-diam, centr.y+diam), Point(centr.x+diam,centr.y-diam)));
 
-//    Range r1(centr.x-diam,centr.x+diam);
-
-    // TODO:
-    //  1. save an image with laser)
-
-//    imshow("Image with center", image);
+    imshow("Image with center", image);
     imshow("Cropped laser spot", crop_mat);
-
-//    imshow("Threshold", val_thr);
-//    imshow("Value", val_mat);
 
     waitKey();
 

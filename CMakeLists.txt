@@ -9,5 +9,8 @@ include_directories( ${OpenCV_INCLUDE_DIRS} )
 add_executable(display_image display_image.cpp)
 target_link_libraries(display_image ${OpenCV_LIBS})
 
-add_executable(cv1 main.cpp)
-target_link_libraries(cv1 ${OpenCV_LIBS})
+add_executable(spot_centroid spot_centroid.cpp)
+target_link_libraries(spot_centroid ${OpenCV_LIBS})
+
+add_executable(calibration calibration.cpp)
+target_link_libraries(calibration ${OpenCV_LIBS})
