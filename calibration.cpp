@@ -12,30 +12,31 @@
 using namespace cv;
 using namespace std;
 
-Point find_laser_spot(const Mat& image) {
+Point get_laser_coords(const Mat& image) {
     Mat image_hsv;
     cvtColor(image, image_hsv, COLOR_BGR2HSV);
 
     std::vector<cv::Mat> planes(3);
-    Mat &val_mat = planes[2];
-
     cv::split(image_hsv, planes);
-    double min, max;
-    cv::minMaxLoc(val_mat, &min, &max);
 
-    double dv_thr = max * 0.95;
+    Mat val_mat = planes[2];
 
-    Mat val_thr;
+    double max_val;
+    cv::minMaxLoc(val_mat, nullptr, &max_val);
 
-    threshold(val_mat, val_thr, dv_thr, 255, THRESH_BINARY);
-    int greater_thr = countNonZero(val_thr);
+    double dyn_val_thr = max_val * 0.95;
+
+    Mat thr_val_mat;
+
+    threshold(val_mat, thr_val_mat, dyn_val_thr, 255, THRESH_BINARY);
+    int greater_thr = countNonZero(thr_val_mat);
 
     std::cout << "num of greater than 0.95 thr: " <<  greater_thr << '\n';
 
-    Moments m = moments(val_thr,true);
-    Point centr(m.m10 / m.m00, m.m01 / m.m00);
+    Moments moms = moments(thr_val_mat, true);
+    Point centroid(static_cast<int>(moms.m10 / moms.m00), static_cast<int>(moms.m01 / moms.m00));
 
-    return centr;
+    return centroid;
 }
 
 int main() {
@@ -50,12 +51,12 @@ int main() {
 
         Mat image = imread(fn, 1);
 
-        Point centr = find_laser_spot(image);
+        Point centroid = get_laser_coords(image);
 
-        pts_src.emplace_back(centr);
+        pts_src.emplace_back(centroid);
     }
 
-    float s_height = 210, s_width = 295;
+    int s_height = 210, s_width = 295;
 
     vector<Point2f> pts_dst;
 
@@ -64,36 +65,25 @@ int main() {
     pts_dst.emplace_back(Point2f(s_width, s_height));
     pts_dst.emplace_back(Point2f(0, s_height));
 
-    Mat hom = findHomography(pts_src, pts_dst);
+    Mat hom_mat = findHomography(pts_src, pts_dst);
 
     string aim_fn = "../data/test_aim.jpg";
-    Mat im_src = imread(aim_fn, 1);
-    Mat im_out;
+    Mat aim_mat = imread(aim_fn, 1);
+    Mat transformed_mat;
 
-    warpPerspective(im_src, im_out, hom, Size(s_width + 50, s_height + 50));
+    warpPerspective(aim_mat, transformed_mat, hom_mat, Size(s_width + 50, s_height + 50));
 
-    imshow("Perspected image", im_out);
+    imshow("Transformed image", transformed_mat);
 
-    Point aim = find_laser_spot(im_src);
+    Point aim_pt = get_laser_coords(aim_mat);
 
-//    cv::Mat_<double> aim_mat(3, 1);
-//
-//    aim_mat(0, 0)=aim.x;
-//    aim_mat(1, 0)=aim.y;
-//    aim_mat(2, 0)=1.0;
-//
-//    Mat_<double> proj_aim_mat = hom * aim_mat;
-//    // divide because homography works in such way
-//    proj_aim_mat = proj_aim_mat / proj_aim_mat(2, 0);
-//
-//    Point proj_aim{static_cast<int>(proj_aim_mat(0, 0)), static_cast<int>(proj_aim_mat(1, 0))};
-
-    vector<Point2d> src_pts{aim};
+    vector<Point2d> src_pts{aim_pt};
     vector<Point2d> transformed_pts;
 
-    perspectiveTransform(src_pts, transformed_pts, hom);
+    // inside divide by 3 coordinate because homography works in such way
+    perspectiveTransform(src_pts, transformed_pts, hom_mat);
 
-    cout << "projected coords of aim: " << transformed_pts[0] << endl;
+    cout << "projected coords of spot: " << transformed_pts[0] << endl;
 
     waitKey();
 
