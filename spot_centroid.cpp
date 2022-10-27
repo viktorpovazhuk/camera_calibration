@@ -13,22 +13,22 @@ using namespace std;
 int main() {
     Mat image;
 
-    VideoCapture cap(0);
-
-    if (!cap.isOpened()) {
-        std::cout << "cannot open camera";
-    }
-
-    if (!cap.read(image)) {
-        std::cout << "cannot read from camera";
-        return 0;
-    }
+//    VideoCapture cap(0);
+//
+//    if (!cap.isOpened()) {
+//        std::cout << "cannot open camera";
+//    }
+//
+//    if (!cap.read(image)) {
+//        std::cout << "cannot read from camera";
+//        return 0;
+//    }
 //
 //    imshow("Image", image);
 //
-    imwrite("../data/test_aim.jpg", image);
+//    imwrite("../data/test_aim.jpg", image);
 
-//    image = imread("../data/test1.jpg", 1);
+    image = imread("../data/test1.jpg", 1);
 //
 //    if (!image.data)
 //    {
@@ -40,9 +40,10 @@ int main() {
     cvtColor(image, image_hsv, COLOR_BGR2HSV);
 
     std::vector<cv::Mat> planes(3);
-    Mat &val_mat = planes[2];
-
     cv::split(image_hsv, planes);
+
+    Mat val_mat = planes[2];
+
     double min, max;
     cv::minMaxLoc(val_mat, &min, &max);
 
@@ -72,6 +73,24 @@ int main() {
     // didn't work. Don't know why
 //    Mat crop_mat = val_mat(Range(centr.x-diam,centr.x+diam),Range(centr.y-diam,centr.y+diam));
     Mat crop_mat(image, Rect(Point(centr.x-diam, centr.y+diam), Point(centr.x+diam,centr.y-diam)));
+
+    cv::split(crop_mat, planes);
+
+    val_mat = planes[2];
+
+    double crop_max_val;
+    cv::minMaxLoc(val_mat, nullptr, &crop_max_val);
+
+    double crop_thr = crop_max_val * 0.9;
+
+    Mat thr_mat;
+    threshold(val_mat, thr_mat, crop_thr, 255, THRESH_BINARY);
+    greater_thr = countNonZero(thr_mat);
+
+    std::cout << "number of pixels greater than 0.9 thr in cropped area, total number: " <<  greater_thr << ", " << crop_mat.total() << '\n';
+    std::cout << "proportion of greater than 0.9 thr in cropped area: " <<  greater_thr / (float)crop_mat.total() << '\n';
+
+
 
     imshow("Image with center", image);
     imshow("Cropped laser spot", crop_mat);

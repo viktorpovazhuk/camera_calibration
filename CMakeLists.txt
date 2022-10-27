@@ -12,5 +12,8 @@ target_link_libraries(display_image ${OpenCV_LIBS})
 add_executable(spot_centroid spot_centroid.cpp)
 target_link_libraries(spot_centroid ${OpenCV_LIBS})
 
-add_executable(calibration calibration.cpp)
+add_executable(calibration calibration.cpp functions.h functions.cpp)
 target_link_libraries(calibration ${OpenCV_LIBS})
+
+add_executable(contours contours.cpp functions.h functions.cpp)
+target_link_libraries(contours ${OpenCV_LIBS})

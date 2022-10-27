@@ -2,39 +2,56 @@
 // Created by vivi on 21.10.22.
 //
 
+#include "functions.h"
+
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <cmath>
 #include <cstdio>
 #include <string>
 #include <vector>
+#include <stdexcept>
 
 using namespace cv;
 using namespace std;
+
+class dyn_thr_error : public std::runtime_error {
+public:
+    using runtime_error::runtime_error;
+};
+
+class num_spots_error : public std::runtime_error {
+public:
+    using runtime_error::runtime_error;
+};
 
 Point get_laser_coords(const Mat& image) {
     Mat image_hsv;
     cvtColor(image, image_hsv, COLOR_BGR2HSV);
 
-    std::vector<cv::Mat> planes(3);
-    cv::split(image_hsv, planes);
+    Mat thr_mat = get_thr_val_mat(image_hsv, 0.95);
 
-    Mat val_mat = planes[2];
+    int num_pixels_greater_thr = countNonZero(thr_mat);
 
-    double max_val;
-    cv::minMaxLoc(val_mat, nullptr, &max_val);
+    std::cout << "Num of greater than 0.95 thr: " << num_pixels_greater_thr << '\n';
 
-    double dyn_val_thr = max_val * 0.95;
+    if (num_pixels_greater_thr > 100) {
+        throw dyn_thr_error{"Too many pixels with value > threshold: " + to_string(num_pixels_greater_thr)};
+    }
 
-    Mat thr_val_mat;
+    Ptr<SimpleBlobDetector> detector = create_blob_detector();
 
-    threshold(val_mat, thr_val_mat, dyn_val_thr, 255, THRESH_BINARY);
-    int greater_thr = countNonZero(thr_val_mat);
+    std::vector<KeyPoint> key_points;
+    detector->detect(thr_mat, key_points);
 
-    std::cout << "num of greater than 0.95 thr: " <<  greater_thr << '\n';
+    if (key_points.size() > 1) {
+        throw num_spots_error{"Too many light spots on picture: " + to_string(key_points.size())};
+    }
+    else if (key_points.empty()) {
+        throw num_spots_error{"Didn't found spots"};
+    }
 
-    Moments moms = moments(thr_val_mat, true);
-    Point centroid(static_cast<int>(moms.m10 / moms.m00), static_cast<int>(moms.m01 / moms.m00));
+    Point2f centroid = key_points[0].pt;
 
     return centroid;
 }
@@ -91,7 +108,7 @@ int main() {
     // inside divide by 3 coordinate because homography works in such way
     perspectiveTransform(src_pts, transformed_pts, hom_mat);
 
-    cout << "projected coords of spot: " << transformed_pts[0] << endl;
+    cout << "projected coords of spot: " << transformed_pts[0] << '\n';
 
     waitKey();
 
