@@ -18,6 +18,9 @@ Mat get_thr_val_mat(const Mat &mat, double thr_coef);
 
 Ptr<SimpleBlobDetector> create_blob_detector();
 
+Point get_laser_coords(const Mat& image);
+
+
 // deprecated
 bool check_laser_area(const Mat &area);
 

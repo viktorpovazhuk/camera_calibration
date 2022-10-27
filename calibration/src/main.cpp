@@ -3,6 +3,7 @@
 //
 
 #include "functions.h"
+#include "exceptions.h"
 
 #include <opencv2/opencv.hpp>
 #include <iostream>
@@ -10,20 +11,9 @@
 #include <cstdio>
 #include <string>
 #include <vector>
-#include <stdexcept>
 
 using namespace cv;
 using namespace std;
-
-class dyn_thr_error : public std::runtime_error {
-public:
-    using runtime_error::runtime_error;
-};
-
-class num_spots_error : public std::runtime_error {
-public:
-    using runtime_error::runtime_error;
-};
 
 Point get_laser_coords(const Mat& image) {
     Mat image_hsv;
