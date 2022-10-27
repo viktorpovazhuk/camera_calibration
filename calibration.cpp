@@ -39,8 +39,8 @@ Point get_laser_coords(const Mat& image) {
     return centroid;
 }
 
-int main() {
-    vector<Point2f> pts_src;
+vector<Point2f> get_corners_coords() {
+    vector<Point2f> corners_pts;
 
     for (int i = 0; i < 4; i++) {
         string fmt = "../data/test%d.jpg";
@@ -53,27 +53,35 @@ int main() {
 
         Point centroid = get_laser_coords(image);
 
-        pts_src.emplace_back(centroid);
+        corners_pts.emplace_back(centroid);
     }
 
-    int s_height = 210, s_width = 295;
+    return corners_pts;
+}
+
+void warp_aim_img(const Mat &aim_mat, const Mat &hom_mat, int screen_width, int screen_height) {
+    Mat transformed_mat;
+
+    warpPerspective(aim_mat, transformed_mat, hom_mat, Size(screen_width + 50, screen_height + 50));
+
+    imshow("Transformed image", transformed_mat);
+}
+
+int main() {
+    int screen_height = 210, screen_width = 295;
+
+    vector<Point2f> pts_src = get_corners_coords();
 
     vector<Point2f> pts_dst;
-
     pts_dst.emplace_back(Point2f(0, 0));
-    pts_dst.emplace_back(Point2f(s_width, 0));
-    pts_dst.emplace_back(Point2f(s_width, s_height));
-    pts_dst.emplace_back(Point2f(0, s_height));
+    pts_dst.emplace_back(Point2f(screen_width, 0));
+    pts_dst.emplace_back(Point2f(screen_width, screen_height));
+    pts_dst.emplace_back(Point2f(0, screen_height));
 
     Mat hom_mat = findHomography(pts_src, pts_dst);
 
-    string aim_fn = "../data/test_aim.jpg";
-    Mat aim_mat = imread(aim_fn, 1);
-    Mat transformed_mat;
-
-    warpPerspective(aim_mat, transformed_mat, hom_mat, Size(s_width + 50, s_height + 50));
-
-    imshow("Transformed image", transformed_mat);
+    Mat aim_mat = imread("../data/test_aim.jpg", 1);
+    warp_aim_img(aim_mat, hom_mat, screen_width, screen_height);
 
     Point aim_pt = get_laser_coords(aim_mat);
 
