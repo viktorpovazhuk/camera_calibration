@@ -11,6 +11,9 @@
 #include <cstdio>
 #include <string>
 #include <vector>
+#include <filesystem>
+
+//#define TEST_IMG
 
 using namespace cv;
 using namespace std;
@@ -41,15 +44,16 @@ Point get_laser_coords(const Mat& image) {
         throw num_spots_error{"Didn't found spots"};
     }
 
-    Point2f centroid = key_points[0].pt;
+    Point2f laser_pt = key_points[0].pt;
 
-    return centroid;
+    return laser_pt;
 }
 
-vector<Point2f> get_corners_coords() {
-    vector<Point2f> corners_pts;
+vector<Point2f> get_corners_coords(VideoCapture &video_capture) {
+    vector<Point2f> corners;
 
-    for (int i = 0; i < 4; i++) {
+    while (corners.size() < 4) {
+#ifdef TEST_IMG
         string fmt = "../data/test%d.jpg";
         size_t size_s = snprintf(nullptr, 0, fmt.c_str(), i) + 1;
         char buf[size_s];
@@ -57,50 +61,76 @@ vector<Point2f> get_corners_coords() {
         string fn{buf};
 
         Mat image = imread(fn, 1);
+#else
+        cin.get();
 
-        Point centroid = get_laser_coords(image);
+        Mat image;
+        bool success = video_capture.read(image);
 
-        corners_pts.emplace_back(centroid);
+        if (!success) {
+            throw std::runtime_error{"Can't get photo from camera"};
+        }
+#endif
+        Point corner = get_laser_coords(image);
+
+        corners.emplace_back(corner);
     }
 
-    return corners_pts;
-}
-
-void warp_aim_img(const Mat &aim_mat, const Mat &hom_mat, int screen_width, int screen_height) {
-    Mat transformed_mat;
-
-    warpPerspective(aim_mat, transformed_mat, hom_mat, Size(screen_width + 50, screen_height + 50));
-
-    imshow("Transformed image", transformed_mat);
+    return corners;
 }
 
 int main() {
     int screen_height = 210, screen_width = 295;
+    VideoCapture video_capture(2);
 
-    vector<Point2f> pts_src = get_corners_coords();
+    if (!video_capture.isOpened()) {
+        std::cerr << "Cannot open camera" << '\n';
+        exit(EXIT_FAILURE);
+    }
 
-    vector<Point2f> pts_dst;
-    pts_dst.emplace_back(Point2f(0, 0));
-    pts_dst.emplace_back(Point2f(screen_width, 0));
-    pts_dst.emplace_back(Point2f(screen_width, screen_height));
-    pts_dst.emplace_back(Point2f(0, screen_height));
+    // calibrate camera
+    Mat hom_mat = imread("./configs/homography.jpg");
 
-    Mat hom_mat = findHomography(pts_src, pts_dst);
+    if (!hom_mat.data) {
+        vector<Point2f> camera_pos_corners = get_corners_coords(video_capture);
 
-    Mat aim_mat = imread("../data/test_aim.jpg", 1);
-    warp_aim_img(aim_mat, hom_mat, screen_width, screen_height);
+        vector<Point2f> screen_corners;
+        screen_corners.emplace_back(Point2f(0, 0));
+        screen_corners.emplace_back(Point2f(screen_width, 0));
+        screen_corners.emplace_back(Point2f(screen_width, screen_height));
+        screen_corners.emplace_back(Point2f(0, screen_height));
 
-    Point aim_pt = get_laser_coords(aim_mat);
+        hom_mat = findHomography(camera_pos_corners, screen_corners);
 
-    vector<Point2d> src_pts{aim_pt};
-    vector<Point2d> transformed_pts;
+        imwrite("./configs/homography.jpg", hom_mat);
+    }
 
-    // inside divide by 3 coordinate because homography works in such way
-    perspectiveTransform(src_pts, transformed_pts, hom_mat);
+    // get screen coordinates
+    while (true) {
+#ifdef TEST_IMG
+        Mat aim_mat = imread("../data/test_aim.jpg", 1);
 
-    cout << "projected coords of spot: " << transformed_pts[0] << '\n';
+        Mat transformed_mat;
+        warpPerspective(aim_mat, transformed_mat, hom_mat, Size(screen_width, screen_height));
+        imshow("Transformed image", transformed_mat);
+#else
+        cin.get();
 
-    waitKey();
+        Mat aim_mat;
+        video_capture.read(aim_mat);
+#endif
+        try {
+            Point laser_pt = get_laser_coords(aim_mat);
 
-    return 0;
+            vector<Point2d> camera_pos_pts{laser_pt};
+            vector<Point2d> screen_pts;
+
+            // function inside divides by 3rd coordinate because homography works in such way
+            perspectiveTransform(camera_pos_pts, screen_pts, hom_mat);
+
+            cout << "coords of laser on screen: " << screen_pts[0] << '\n';
+        } catch (std::exception ex) {
+            cerr << ex.what() << '\n';
+        }
+    }
 }
