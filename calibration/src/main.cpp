@@ -137,7 +137,15 @@ int main() {
         cin.get();
 
         Mat aim_mat = imread("../data/test_aim.jpg", 1);
+#else
+        cin.get();
 
+        Mat aim_mat;
+        VideoCapture video_capture{camera_idx};
+        video_capture.read(aim_mat);
+#endif
+
+#ifdef DEBUG_PROJECTOR
         Mat transformed_mat;
         warpPerspective(aim_mat, transformed_mat, hom_mat, Size(screen_width, screen_height));
 
@@ -146,13 +154,8 @@ int main() {
         waitKey();
         // tries to create new window with existing the same -> fails
         destroyAllWindows();
-#else
-        cin.get();
-
-        Mat aim_mat;
-        VideoCapture video_capture{camera_idx};
-        video_capture.read(aim_mat);
 #endif
+
         try {
             Point laser_pt = get_laser_coords(aim_mat);
 
