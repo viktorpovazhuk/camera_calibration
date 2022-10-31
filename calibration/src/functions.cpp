@@ -40,16 +40,16 @@ Ptr<SimpleBlobDetector> create_blob_detector() {
     params.maxThreshold = 255;
 
     // Filter by Area
-    params.filterByArea = true;
-    params.minArea = 3;
+    params.filterByArea = false;
+    params.minArea = 1;
     params.maxArea = 36;
 
     // Filter by Circularity
-    params.filterByCircularity = true;
+    params.filterByCircularity = false;
     params.minCircularity = 0.5;
 
     // Filter by Convexity
-    params.filterByConvexity = true;
+    params.filterByConvexity = false;
     params.minConvexity = 0.5;
 
     // Other filters
