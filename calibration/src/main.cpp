@@ -12,14 +12,24 @@
 #include <cstdio>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 
-//#define TEST_IMG
+#define TEST_IMG
 //#define DEBUG_PROJECTOR
 
 using namespace cv;
 using namespace std;
 namespace fs = boost::filesystem;
+
+class laser_spot {
+public:
+    laser_spot() = default;
+    laser_spot(Point2f centroid, double diameter) : centroid(centroid), diameter(diameter) {}
+
+    Point2f centroid;
+    double diameter = 0;
+};
 
 Point get_laser_coords(const Mat& image) {
     Mat image_hsv;
@@ -40,19 +50,62 @@ Point get_laser_coords(const Mat& image) {
         throw dyn_thr_error{"Too many pixels with value > threshold: " + to_string(num_pixels_greater_thr)};
     }
 
-    Ptr<SimpleBlobDetector> detector = create_blob_detector();
+    vector<vector<Point>> all_contours;
+    vector<vector<Point>> contours;
+    findContours(thr_mat, all_contours, RETR_TREE, CHAIN_APPROX_SIMPLE, Point(0, 0));
+    copy_if(all_contours.begin(), all_contours.end(), std::back_inserter(contours),
+            [] (vector<Point> &contour_pts) {
+        return contour_pts.size() < 36;
+    });
 
-    std::vector<KeyPoint> key_points;
-    detector->detect(thr_mat, key_points);
-
-    if (key_points.size() > 1) {
-        throw num_spots_error{"Too many light spots on picture: " + to_string(key_points.size())};
+    vector<Moments> contours_moms(contours.size());
+    vector<Point2f> contours_centers(contours.size());
+    for (int i = 0; i < contours.size(); i++) {
+        contours_moms[i] = moments(contours[i], false);
+        if (contours_moms[i].m00 != 0) {
+            contours_centers[i] = Point2f(contours_moms[i].m10 / contours_moms[i].m00, contours_moms[i].m01 / contours_moms[i].m00);
+        }
+        else {
+            int x_sum = 0, y_sum = 0;
+            for (Point &p: contours[i]) {
+                x_sum += p.x;
+                y_sum += p.y;
+            }
+            contours_centers[i] = Point2f((float)x_sum / contours[i].size(), (float)y_sum / contours[i].size());
+        }
     }
-    else if (key_points.empty()) {
+
+#ifdef DEBUG_PROJECTOR
+    Mat spots_mat = thr_mat.clone();
+
+    for (int i = 0; i < contours_centers.size(); ++i) {
+        Scalar color(0, 0, 255);
+        circle(spots_mat, contours_centers[i], 20, color, 1);
+    }
+
+    imshow("Found spots", spots_mat);
+#endif
+
+    vector<laser_spot> spots;
+    for (int i = 0; i < contours.size(); i++) {
+        int diameter = 2 * ceil(pow(contours[i].size() / 3.14, 0.5));
+        Point2f center = contours_centers[i];
+
+        Mat crop_mat(image, Rect(Point(center.x-diameter, center.y+diameter), Point(center.x+diameter,center.y-diameter)));
+
+        if (check_laser_area(crop_mat)) {
+            spots.emplace_back(contours_centers[i], diameter);
+        }
+    }
+
+    if (spots.size() > 1) {
+        throw num_spots_error{"Too many light spots on picture: " + to_string(spots.size())};
+    }
+    else if (spots.empty()) {
         throw num_spots_error{"Didn't found spots"};
     }
 
-    Point2f laser_pt = key_points[0].pt;
+    Point2f laser_pt = spots[0].centroid;
 
     return laser_pt;
 }
@@ -102,7 +155,7 @@ vector<Point2f> get_corners_coords(int camera_idx) {
 
 int main() {
     int screen_height = 210, screen_width = 295;
-    bool use_saved_homography = true;
+    bool use_saved_homography = false;
     int camera_idx = 2;
 
     if (!VideoCapture{camera_idx}.isOpened()) {
@@ -133,6 +186,7 @@ int main() {
 
     // get screen coordinates
     while (true) {
+
 #ifdef TEST_IMG
         cin.get();
 

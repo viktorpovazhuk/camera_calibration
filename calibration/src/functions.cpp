@@ -68,5 +68,5 @@ bool check_laser_area(const Mat &area) {
     std::cout << "number of pixels greater than 0.9 thr in cropped area, total number: " <<  num_pixels_greater_thr << ", " << area.total() << '\n';
     std::cout << "proportion of greater than 0.9 thr in cropped area: " <<  num_pixels_greater_thr / (float)area.total() << '\n';
 
-    return num_pixels_greater_thr / (float)area.total() < 0.3;
+    return num_pixels_greater_thr / (float)area.total() < 0.6;
 }
