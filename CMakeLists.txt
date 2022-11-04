@@ -21,7 +21,7 @@ target_link_libraries(display_image ${OpenCV_LIBS})
 add_executable(spot_centroid examples/diameter_centroid.cpp)
 target_link_libraries(spot_centroid ${OpenCV_LIBS})
 
-add_executable(contours examples/contours.cpp
+add_executable(contours examples/find_contours.cpp
         calibration/include/functions.h calibration/src/functions.cpp)
 target_link_libraries(contours ${OpenCV_LIBS})
 

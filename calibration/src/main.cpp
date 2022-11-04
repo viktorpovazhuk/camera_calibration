@@ -15,7 +15,7 @@
 #include <algorithm>
 
 
-#define TEST_IMG
+//#define TEST_IMG
 //#define DEBUG_PROJECTOR
 
 using namespace cv;
