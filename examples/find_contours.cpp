@@ -98,6 +98,11 @@ int main(int argc, char *argv[]) {
     std::vector<cv::Mat> hsv_planes(3);
     cv::split(image_hsv, hsv_planes);
 
+    // TODO:
+    //  1. show corresponding contour on image
+    //  2. rewrite calcHist parameters as vector ?
+    //  3. analyze full area of contour, not only contour itself
+
 //    for (int cont_i = 0; cont_i < contours.size(); cont_i++) {
 //        // plot histogram of H S V
 //

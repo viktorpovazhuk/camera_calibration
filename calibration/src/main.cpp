@@ -17,6 +17,7 @@
 
 //#define TEST_IMG
 //#define DEBUG_PROJECTOR
+//#define SAVE_IMAGES
 
 using namespace cv;
 using namespace std;
@@ -116,7 +117,7 @@ vector<Point2f> get_corners_coords(int camera_idx) {
     while (corners.size() < 4) {
 #ifdef TEST_IMG
         int i = corners.size();
-        string fmt = "../data/test%d.jpg";
+        string fmt = "../data/test/test%d.jpg";
         size_t size_s = snprintf(nullptr, 0, fmt.c_str(), i) + 1;
         char buf[size_s];
         snprintf(buf, size_s, fmt.c_str(), i);
@@ -130,6 +131,17 @@ vector<Point2f> get_corners_coords(int camera_idx) {
 
         Mat image;
         bool success = video_capture.read(image);
+
+#ifdef SAVE_IMAGES
+        int i = corners.size();
+        string fmt = "../data/samples/corner%d.jpg";
+        size_t size_s = snprintf(nullptr, 0, fmt.c_str(), i) + 1;
+        char buf[size_s];
+        snprintf(buf, size_s, fmt.c_str(), i);
+        string fn{buf};
+
+        imwrite(fn, image);
+#endif
 
 #ifdef DEBUG_PROJECTOR
         namedWindow("Original");
@@ -154,9 +166,10 @@ vector<Point2f> get_corners_coords(int camera_idx) {
 }
 
 int main() {
-    int screen_height = 210, screen_width = 295;
+    int screen_height = 200, screen_width = 300;
     bool use_saved_homography = false;
-    int camera_idx = 2;
+    // v4l2-ctl --list-devices
+    int camera_idx = 1;
 
     if (!VideoCapture{camera_idx}.isOpened()) {
         std::cerr << "Cannot open camera" << '\n';
@@ -180,7 +193,7 @@ int main() {
 
         hom_mat = findHomography(camera_pos_corners, screen_corners);
 
-        FileStorage fs("./configs/homography.xml",FileStorage::WRITE);
+        FileStorage fs("../data/configs/homography.xml",FileStorage::WRITE);
         fs << "hom" << hom_mat;
     }
 
@@ -190,7 +203,7 @@ int main() {
 #ifdef TEST_IMG
         cin.get();
 
-        Mat aim_mat = imread("../data/test_aim.jpg", 1);
+        Mat aim_mat = imread("../data/test/test_aim.jpg", 1);
 #else
         cin.get();
 
@@ -199,15 +212,23 @@ int main() {
         video_capture.read(aim_mat);
 #endif
 
-#ifdef DEBUG_PROJECTOR
+#ifdef SAVE_IMAGES
+        imwrite("../data/samples/aim.jpg", aim_mat);
+#endif
+
         Mat transformed_mat;
         warpPerspective(aim_mat, transformed_mat, hom_mat, Size(screen_width, screen_height));
 
+#ifdef DEBUG_PROJECTOR
         imshow("Transformed image", transformed_mat);
 
         waitKey();
         // tries to create new window with existing the same -> fails
         destroyAllWindows();
+#endif
+
+#ifdef SAVE_IMAGES
+        imwrite("../data/samples/aim_transformed.jpg", transformed_mat);
 #endif
 
         try {
