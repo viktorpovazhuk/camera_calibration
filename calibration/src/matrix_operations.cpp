@@ -2,13 +2,14 @@
 // Created by vivi on 27.10.22.
 //
 
+#include "matrix_operations.h"
+#include "config.h"
+
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <cmath>
 #include <cstdio>
 #include <vector>
-
-#include "functions.h"
 
 using namespace cv;
 using namespace std;
@@ -28,37 +29,6 @@ Mat get_thr_val_mat(const Mat &mat, double thr_coef) {
     threshold(val_mat, thr_mat, thr_val, 255, THRESH_BINARY);
 
     return thr_mat;
-}
-
-Ptr<SimpleBlobDetector> create_blob_detector() {
-    SimpleBlobDetector::Params params;
-
-    // Change thresholds
-    params.minRepeatability = 1;
-    params.thresholdStep = 10;
-    params.minThreshold = 254;
-    params.maxThreshold = 255;
-
-    // Filter by Area
-    params.filterByArea = false;
-    params.minArea = 1;
-    params.maxArea = 36;
-
-    // Filter by Circularity
-    params.filterByCircularity = false;
-    params.minCircularity = 0.5;
-
-    // Filter by Convexity
-    params.filterByConvexity = false;
-    params.minConvexity = 0.5;
-
-    // Other filters
-    params.filterByColor = false;
-    params.filterByInertia = false;
-
-    Ptr<SimpleBlobDetector> detector = SimpleBlobDetector::create(params);
-
-    return detector;
 }
 
 bool check_laser_area(const Mat &area) {

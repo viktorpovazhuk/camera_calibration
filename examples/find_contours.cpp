@@ -9,7 +9,7 @@
 #include <string>
 #include <vector>
 
-#include "functions.h"
+#include "matrix_operations.h"
 
 using namespace std;
 using namespace cv;

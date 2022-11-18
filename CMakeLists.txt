@@ -11,7 +11,10 @@ include_directories(${Boost_INCLUDE_DIR})
 
 include_directories(calibration/include)
 
-add_executable(${PROJECT_NAME} calibration/src/main.cpp calibration/include/functions.h calibration/src/functions.cpp calibration/include/exceptions.h)
+add_executable(${PROJECT_NAME} calibration/src/main.cpp calibration/include/matrix_operations.h calibration/src/matrix_operations.cpp
+        calibration/include/exceptions.h calibration/src/laser_spot.cpp calibration/include/laser_spot.h
+        calibration/src/calibration.cpp calibration/include/calibration.h
+        calibration/src/laser_detection.cpp calibration/include/laser_detection.h calibration/include/config.h)
 target_link_libraries(${PROJECT_NAME} ${OpenCV_LIBS})
 target_link_libraries(${PROJECT_NAME} Boost::system Boost::filesystem Boost::regex)
 
@@ -22,7 +25,7 @@ add_executable(spot_centroid examples/diameter_centroid.cpp)
 target_link_libraries(spot_centroid ${OpenCV_LIBS})
 
 add_executable(contours examples/find_contours.cpp
-        calibration/include/functions.h calibration/src/functions.cpp)
+        calibration/include/matrix_operations.h calibration/src/matrix_operations.cpp)
 target_link_libraries(contours ${OpenCV_LIBS})
 
 add_executable(video_capture examples/video_capture.cpp)
