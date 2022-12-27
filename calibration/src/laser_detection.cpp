@@ -127,6 +127,9 @@ vector<Point2f> get_corners_coords(int camera_idx) {
     vector<Point2f> corners;
 
     while (corners.size() < 4) {
+        //std::string path = fs::current_path().string();
+        //std::cout << path << endl;
+
 #ifdef TEST_IMG
         int i = corners.size();
         string fmt = "../data/test/test%d.jpg";
