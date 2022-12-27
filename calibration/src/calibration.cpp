@@ -7,7 +7,7 @@
 #include "config.h"
 
 #include <opencv2/opencv.hpp>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <iostream>
 #include <cmath>
 #include <cstdio>
@@ -17,7 +17,7 @@
 
 using namespace cv;
 using namespace std;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 Mat find_homography_matrix(int camera_idx, bool use_saved_homography, int screen_width, int screen_height) {
     Mat hom_mat;

@@ -18,7 +18,7 @@ int main() {
     // set height and width of projector screen
     int screen_height = 200, screen_width = 300;
     // load previously created matrix from file
-    bool use_saved_homography = false;
+    bool use_saved_homography = true;
     // get camera ids: v4l2-ctl --list-devices
     int camera_idx = 0;
 

@@ -9,7 +9,7 @@
 #include "config.h"
 
 #include <opencv2/opencv.hpp>
-#include <boost/filesystem.hpp>
+#include <filesystem>
 #include <iostream>
 #include <cmath>
 #include <cstdio>
@@ -19,7 +19,7 @@
 
 using namespace cv;
 using namespace std;
-namespace fs = boost::filesystem;
+namespace fs = std::filesystem;
 
 using point_vector = std::vector<cv::Point>;
 
@@ -130,9 +130,8 @@ vector<Point2f> get_corners_coords(int camera_idx) {
 #ifdef TEST_IMG
         int i = corners.size();
         string fmt = "../data/test/test%d.jpg";
-        size_t size_s = snprintf(nullptr, 0, fmt.c_str(), i) + 1;
-        char buf[size_s];
-        snprintf(buf, size_s, fmt.c_str(), i);
+        char buf[300];
+        snprintf(buf, sizeof(buf), fmt.c_str(), i);
         string fn{buf};
 
         Mat image = imread(fn, 1);
@@ -147,9 +146,8 @@ vector<Point2f> get_corners_coords(int camera_idx) {
 #ifdef SAVE_IMAGES
         int i = corners.size();
         string fmt = "../data/samples/corner%d.jpg";
-        size_t size_s = snprintf(nullptr, 0, fmt.c_str(), i) + 1;
-        char buf[size_s];
-        snprintf(buf, size_s, fmt.c_str(), i);
+        char buf[300];
+        snprintf(buf, sizeof(buf), fmt.c_str(), i);
         string fn{buf};
 
         imwrite(fn, image);
@@ -205,11 +203,12 @@ Point2d get_spot_screen_coords(Mat &homography_mat, int screen_width, int screen
     imwrite("../data/samples/aim_transformed.jpg", transformed_mat);
 #endif
 
+    vector<Point2d> screen_pts;
     try {
         Point laser_pt = get_laser_coords(aim_mat);
 
         vector<Point2d> camera_pos_pts{laser_pt};
-        vector<Point2d> screen_pts;
+        
 
         // function inside divides by 3rd coordinate because homography works in such way
         perspectiveTransform(camera_pos_pts, screen_pts, homography_mat);
@@ -218,4 +217,6 @@ Point2d get_spot_screen_coords(Mat &homography_mat, int screen_width, int screen
     } catch (std::exception &ex) {
         cerr << ex.what() << '\n';
     }
+
+    return screen_pts[0];
 }

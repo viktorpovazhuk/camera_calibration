@@ -2,3 +2,7 @@ cmake-build-debug/
 .PVS-Studio/
 .idea/
 data/
+.vs/
+out/
+CMakeSettings.json
+bin/
