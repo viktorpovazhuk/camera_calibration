@@ -14,6 +14,9 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+using namespace cv;
+
 int main() {
     // set height and width of projector screen
     int screen_height = 200, screen_width = 300;
